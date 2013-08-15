@@ -4,6 +4,39 @@ var myScreenreader = document.getElementById("editor-screenreader");
 
 var myContentEditable = document.getElementById("content-editable");
 
+/*
+myTextArea.addEventListener("keydown", function(e) {
+
+    console.log("HERE");
+    myTextArea.selectionStart = (myTextArea.selectionStart + 1) || 0;
+    myTextArea.selectionEnd = (myTextArea.selectionEnd + 1) || 0;
+    e.stopPropagation();
+    //e.preventDefault();
+
+}, false);*/
+
+myScreenreader.onkeydown = function(e) {
+
+    console.log("HERE");
+
+    myScreenreader.setSelectionRange((myScreenreader.selectionStart + 1) || 0, (myScreenreader.selectionStart + 1) || 0);
+
+    //myScreenreader.selectionStart = (myScreenreader.selectionStart + 1) || 0;
+    //myScreenreader.selectionEnd = myScreenreader.selectionStart;
+    e.preventDefault();
+    e.stopPropagation();
+    //e.stopPropagation();
+    //e.preventDefault();
+    //myScreenreader.value = "Hello " + Math.random();
+    //myScreenreader
+    //myScreenreader.setSelectionRange(
+    //    myScreenreader.selectionStart + 1,
+    //    myScreenreader.selectionEnd + 1);
+
+    //return false;
+};
+
+
 var editor = CodeMirror.fromTextArea(myTextArea, {
 });
 
@@ -22,7 +55,7 @@ function getContext(editor) {
 
     var selectionStart = start.ch;
     var selectionEnd = end.ch;
-    console.log(start, end, selectionStart, selectionEnd);
+   // console.log(start, end, selectionStart, selectionEnd);
 
     return {
         text: editor.getRange(contextStart, contextEnd),
@@ -35,7 +68,7 @@ function getContext(editor) {
 }
 
 function drawContext(editor) {
-    return;
+    //return;
     var context = getContext(editor);
     //editor.display.input.value = "Brian " + Math.random();// context.text;
     //myScreenreader.value = context.text;
@@ -43,24 +76,47 @@ function drawContext(editor) {
     //myScreenreader.selectionEnd = 2;
 
 
+//    var pres = document.querySelectorAll(".CodeMirror-code pre");
+//    pres[0].setAttribute("contentEditable", true);
+
 
     myContentEditable.textContent = context.text;
     var textNode = myContentEditable.childNodes[0];
+
+    //var range = window.getSelection().getRangeAt(0);
+    //console.log(range, textNode);
+    //if (!range) {return;}
     var range = document.createRange();
+    //range.setStart(pres[0].childNodes[0], context.selectionStart);
+    //range.setEnd(pres[0].childNodes[0], context.selectionEnd);
     range.setStart(textNode, context.selectionStart);
     range.setEnd(textNode, context.selectionEnd);
-    var sel = window.getSelection();
-    //sel.removeAllRanges();
-    sel.addRange(range);
 
+
+    var s = window.getSelection();
+    if(s.rangeCount > 1) {
+     for(var i = 1; i < s.rangeCount; i++) {
+      s.removeRange(s.getRangeAt(i));
+     }
+    }
+
+    s.addRange(range);
+   // var sel = window.getSelection();
+   // sel.removeAllRanges();
+    //sel.addRange(range);
+return;
     //myContentEditable.setSelectionRange(context.selectionStart, context.selectionEnd);
-    //myScreenreader.setSelectionRange(context.selectionStart, context.selectionEnd);
+    myScreenreader.value = context.text;
+    myScreenreader.focus();
+    myScreenreader.setSelectionRange(context.selectionStart, context.selectionEnd);
     //myScreenreader.blur();
     //editor.focus();
 
 }
 
+
 editor.on("cursorActivity", function(editor) {
+    return;
     console.log(editor, editor.display.input, editor.display.input.value);
     drawContext(editor);
 });

@@ -93,7 +93,8 @@ window.CodeMirror = (function() {
   function makeDisplay(place, docStart) {
     var d = {};
 
-    var input = d.input = elt("textarea", null, null, "position: absolute; padding: 0; width: 1px; height: 1em; outline: none; font-size: 4px;");
+    var input = d.input = elt("textarea", null, null, "/*position: absolute; padding: 0; width: 1px; height: 1em; outline: none; font-size: 4px;*/");
+    //var input = d.input = elt("textarea", null, null, "position: absolute; padding: 0; width: 1px; height: 1em; outline: none; font-size: 4px;");
     if (webkit) input.style.width = "1000px";
     else input.setAttribute("wrap", "off");
     // if border: 0; -- iOS fails to open keyboard (issue #1287)
@@ -101,7 +102,8 @@ window.CodeMirror = (function() {
     input.setAttribute("autocorrect", "off"); input.setAttribute("autocapitalize", "off"); input.setAttribute("spellcheck", "false");
 
     // Wraps and hides input textarea
-    d.inputDiv = elt("div", [input], null, "overflow: hidden; position: relative; width: 3px; height: 0px;");
+    d.inputDiv = elt("div", [input], null, "/*overflow: hidden;*/ position: relative; width: 3px; height: 0px;");
+    //d.inputDiv = elt("div", [input], null, "overflow: hidden; position: relative; width: 3px; height: 0px;");
     // The actual fake scrollbars.
     d.scrollbarH = elt("div", [elt("div", null, null, "height: 1px")], "CodeMirror-hscrollbar");
     d.scrollbarV = elt("div", [elt("div", null, null, "width: 1px")], "CodeMirror-vscrollbar");
@@ -1486,6 +1488,7 @@ window.CodeMirror = (function() {
   }
 
   function resetInput(cm, user) {
+    return;
     var minimal, selected, doc = cm.doc;
     if (!posEq(doc.sel.from, doc.sel.to)) {
       cm.display.prevInput = "";
@@ -1498,6 +1501,20 @@ window.CodeMirror = (function() {
     } else if (user) {
       cm.display.prevInput = cm.display.input.value = "";
       if (ie && !ie_lt9) cm.display.inputHasSelection = null;
+    }
+
+    if (posEq(doc.sel.from, doc.sel.to)) {
+
+      //cm.display.prevInput = cm.display.input.value = cm.getValue();
+
+      console.log(doc.sel.from, doc.sel.to);
+
+      //cm.display.input.setSelectionRange(doc.sel.from.ch, doc.sel.to.ch);
+
+      //cm.display.input.selectionStart = doc.sel.from.ch;
+      //cm.display.input.selectionEnd = doc.sel.to.ch;
+      //cm.display.input.selectionEnd - 1 || cm.display.input.value.length - 1
+
     }
     cm.display.inaccurateSelection = minimal;
   }
@@ -2079,7 +2096,6 @@ window.CodeMirror = (function() {
 
   var lastStoppedKey = null;
   function onKeyDown(e) {
-    //return false;
     var cm = this;
     if (!cm.state.focused) onFocus(cm);
     if (signalDOMEvent(cm, e) || cm.options.onKeyEvent && cm.options.onKeyEvent(cm, addStop(e))) return;
@@ -2098,7 +2114,6 @@ window.CodeMirror = (function() {
   }
 
   function onKeyPress(e) {
-    //return false;
     var cm = this;
     if (signalDOMEvent(cm, e) || cm.options.onKeyEvent && cm.options.onKeyEvent(cm, addStop(e))) return;
     var keyCode = e.keyCode, charCode = e.charCode;
@@ -2111,7 +2126,6 @@ window.CodeMirror = (function() {
       setTimeout(operation(cm, function() {indentLine(cm, cm.doc.sel.to.line, "smart");}), 75);
     if (handleCharBinding(cm, e, ch)) return;
     if (ie && !ie_lt9) cm.display.inputHasSelection = null;
-
     fastPoll(cm);
   }
 
@@ -2526,16 +2540,32 @@ window.CodeMirror = (function() {
     if (checkAtomic || !posEq(head, sel.head))
       head = skipAtomic(doc, head, bias, checkAtomic != "push");
 
-    if (posEq(sel.anchor, anchor) && posEq(sel.head, head)) return;
 
+    if (doc.cm) {
+      // TODO BRIAN
+      console.log("HERE");
+      var inv = posLess(head, anchor);
+      var from = inv ? head : anchor;
+      var to = inv ? anchor : head;
+
+
+      doc.cm.display.prevInput = doc.cm.display.input.value = doc.cm.getValue();
+      doc.cm.display.input.setSelectionRange(from.ch, to.ch);
+
+    }
+
+    if (posEq(sel.anchor, anchor) && posEq(sel.head, head)) {
+      return;
+    }
     sel.anchor = anchor; sel.head = head;
     var inv = posLess(head, anchor);
     sel.from = inv ? head : anchor;
     sel.to = inv ? anchor : head;
 
-    if (doc.cm)
+    if (doc.cm) {
       doc.cm.curOp.updateInput = doc.cm.curOp.selectionChanged =
         doc.cm.curOp.cursorActivity = true;
+    }
 
     signalLater(doc, "cursorActivity", doc);
   }
@@ -3078,6 +3108,7 @@ window.CodeMirror = (function() {
     },
 
     moveH: operation(null, function(dir, unit) {
+      console.log("Move H");
       var sel = this.doc.sel, pos;
       if (sel.shift || sel.extend || posEq(sel.from, sel.to))
         pos = findPosH(this.doc, sel.head, dir, unit, this.options.rtlMoveVisually);

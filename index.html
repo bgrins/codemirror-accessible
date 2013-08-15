@@ -7,7 +7,9 @@
       <link rel="stylesheet" type="text/css" href="codemirror.css">
 
   <style type="text/css">
+  #experiments { display: none; }
     #editor-screenreader {  }
+    .CodeMirror { height: 100px;}
   </style>
 
 
@@ -16,9 +18,14 @@
 <body>
 
 <textarea id="editor">Hello, marker!!</textarea>
-<textarea id="editor-screenreader"></textarea>
+<div id="experiments">
+<textarea id="editor-screenreader">Some
+Text
+Is
+Here!</textarea>
 <div id="content-editable" contenteditable>test</div>
 
+</div>
 
 </body>
 </html>
