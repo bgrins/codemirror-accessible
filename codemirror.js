@@ -2548,9 +2548,20 @@ window.CodeMirror = (function() {
       var from = inv ? head : anchor;
       var to = inv ? anchor : head;
 
+      var fromOffset = from.ch;
+      doc.eachLine(0, from.line, function(l) {
+        fromOffset += l.text.length + 1;
+        console.log("Looking at ", l);
+      });
+      var toOffset = to.ch;
+      doc.eachLine(0, to.line, function(l) {
+        toOffset += l.text.length + 1;
+        console.log("Looking at ", l);
+      });
+
 
       doc.cm.display.prevInput = doc.cm.display.input.value = doc.cm.getValue();
-      doc.cm.display.input.setSelectionRange(from.ch, to.ch);
+      doc.cm.display.input.setSelectionRange(fromOffset, toOffset);
 
     }
 
