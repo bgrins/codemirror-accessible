@@ -14,7 +14,7 @@ myTextArea.addEventListener("keydown", function(e) {
     //e.preventDefault();
 
 }, false);*/
-
+/*
 myScreenreader.onkeydown = function(e) {
 
     console.log("HERE");
@@ -35,7 +35,7 @@ myScreenreader.onkeydown = function(e) {
 
     //return false;
 };
-
+*/
 
 var editor = CodeMirror.fromTextArea(myTextArea, {
 });
@@ -68,20 +68,56 @@ function getContext(editor) {
 }
 
 function drawContext(editor) {
-    //return;
+    return;
     var context = getContext(editor);
+    console.log(editor, editor.display);
+
+    var input = editor.display.input;//document.getElementById("fake");
+    var oldVal = input.value;
+
+    input.value = editor.display.prevInput = editor.getValue();
+    //input.focus();
+    console.log(context.selectionStart);
+
+
+
+
+    input.setSelectionRange(
+        context.selectionStart,
+        context.selectionEnd
+    );
+    //input.value = oldVal;
+    return;
+    //range.setEnd(pres[0].childNodes[0], context.selectionEnd);
+
     //editor.display.input.value = "Brian " + Math.random();// context.text;
     //myScreenreader.value = context.text;
     //myScreenreader.selectionStart = 1;
     //myScreenreader.selectionEnd = 2;
 
 
-//    var pres = document.querySelectorAll(".CodeMirror-code pre");
-//    pres[0].setAttribute("contentEditable", true);
 
 
     myContentEditable.textContent = context.text;
     var textNode = myContentEditable.childNodes[0];
+
+    var range = document.createRange();
+    range.setStart(textNode, context.selectionStart);
+    range.setEnd(textNode, context.selectionEnd);
+
+
+    var s = window.getSelection();
+    if(s.rangeCount > 1) {
+     for(var i = 1; i < s.rangeCount; i++) {
+      s.removeRange(s.getRangeAt(i));
+     }
+    }
+
+    s.addRange(range);
+
+//    var pres = document.querySelectorAll(".CodeMirror-code pre");
+//    pres[0].setAttribute("contentEditable", true);
+
 
     //var range = window.getSelection().getRangeAt(0);
     //console.log(range, textNode);
@@ -115,11 +151,14 @@ return;
 }
 
 
-editor.on("cursorActivity", function(editor) {
+editor.on("beforeSelectionChange", function(editor) {
     return;
-    console.log(editor, editor.display.input, editor.display.input.value);
+    //console.log(editor, editor.display.input, editor.display.input.value);
     drawContext(editor);
 });
+
+    editor.display.input.setAttribute("style", "height: 200px;");
+    editor.display.input.parentNode.setAttribute("style", "");
 
 drawContext(editor);
 
