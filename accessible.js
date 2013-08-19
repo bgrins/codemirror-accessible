@@ -1,9 +1,14 @@
 window.onload=function(){
 var myTextArea = document.getElementById("editor");
+var clonedTextArea = myTextArea.cloneNode();
+myTextArea.parentNode.appendChild(clonedTextArea);
 var myScreenreader = document.getElementById("editor-screenreader");
 
 var myContentEditable = document.getElementById("content-editable");
+var button = document.getElementById("toggle-textarea-visibility");
 
+console.log("Button")
+button.onclick = toggleTextareaDisplay;
 /*
 myTextArea.addEventListener("keydown", function(e) {
 
@@ -37,7 +42,18 @@ myScreenreader.onkeydown = function(e) {
 };
 */
 
-var editor = CodeMirror.fromTextArea(myTextArea, {
+var editor = window.editor = CodeMirror.fromTextArea(myTextArea, {
+        lineNumbers: true,
+        matchBrackets: true,
+        continueComments: "Enter",
+        extraKeys: {"Ctrl-Q": "toggleComment"}
+});
+
+var editor = window.editor = CodeMirror.fromTextArea(myTextArea, {
+        lineNumbers: true,
+        matchBrackets: true,
+        continueComments: "Enter",
+        extraKeys: {"Ctrl-Q": "toggleComment"}
 });
 
 function getContext(editor) {
@@ -157,9 +173,28 @@ editor.on("beforeSelectionChange", function(editor) {
     drawContext(editor);
 });
 
-    editor.display.input.setAttribute("style", "height: 200px;");
-    editor.display.input.parentNode.setAttribute("style", "");
-
 drawContext(editor);
 
+
+}
+
+var textareaVisible = false;
+function toggleTextareaDisplay() {
+
+    if (!editor.display.input.getAttribute("backup-style")) {
+        editor.display.input.setAttribute("backup-style", editor.display.input.getAttribute("style"));
+        editor.display.input.parentNode.setAttribute("backup-style", editor.display.input.parentNode.getAttribute("style"));
+    }
+
+console.log("click")
+    if (textareaVisible) {
+        editor.display.input.setAttribute("style", editor.display.input.getAttribute("backup-style"));
+        editor.display.input.parentNode.setAttribute("style", editor.display.input.parentNode.getAttribute("backup-style"));
+    }
+    else {
+        editor.display.input.setAttribute("style", "height: 200px;");
+        editor.display.input.parentNode.setAttribute("style", "");
+    }
+
+    textareaVisible = !textareaVisible;
 }

@@ -1489,7 +1489,7 @@ window.CodeMirror = (function() {
     var minimal, selected, doc = cm.doc;
     if (!posEq(doc.sel.from, doc.sel.to)) {
       cm.display.prevInput = "";
-      minimal = hasCopyEvent &&
+      minimal = false && hasCopyEvent &&
         (doc.sel.to.line - doc.sel.from.line > 100 || (selected = cm.getSelection()).length > 1000);
       var content = minimal ? "-" : selected || cm.getSelection();
       cm.display.input.value = content;
@@ -2515,6 +2515,7 @@ window.CodeMirror = (function() {
 
       if (posEq(from, to)) {
         console.log("POS EQ");
+
         var fromOffset = from.ch;
         var toOffset = to.ch;
         var lineNum = 0;
@@ -2525,17 +2526,31 @@ window.CodeMirror = (function() {
           toOffset += l.text.length + 1;
           lineNum++;
         });
+        var selectedRange = doc.cm.getValue();
 
-        //var prevInput = doc.cm.display.prevInput;
-        //var input = doc.cm.display.input.value;
 
-        //doc.cm.display._waiting = true;
-        var prevInput = doc.cm.display.prevInput;
-        var prevValue = doc.cm.display.input.value;
-        //doc.cm.display.prevInput = doc.cm.getValue();
-        doc.cm.display.input.value = doc.cm.getValue();
+        /*
+       var rangeMinLine = Math.max(from.line - 3, 0);
+       var rangeMaxLine = Math.min(to.line + 3, doc.cm.lineCount() );
+       var fromOffset = from.ch;
+       var toOffset = to.ch;
+
+       doc.eachLine(rangeMinLine, from.line, function(l) {
+         fromOffset += l.text.length + 1;
+       });
+
+       doc.eachLine(rangeMinLine, to.line, function(l) {
+         toOffset += l.text.length + 1;
+       });
+
+       var selectedRange = doc.cm.getRange(
+         {line: rangeMinLine, ch: 0 },
+         {line: rangeMaxLine, ch: 0 }
+       );
+        */
+
+        doc.cm.display.input.value = selectedRange;
         doc.cm.display.input.setSelectionRange(fromOffset, toOffset);
-
 
         doc.cm.state.accessibleTextareaWait = true;
 
@@ -2547,7 +2562,7 @@ window.CodeMirror = (function() {
           //doc.cm.display._waiting = false;
           doc.cm.state.accessibleTextareaWait = false;
           resetInput(doc.cm, true);
-        }, 5000);
+        }, 1000);
 
       }
     }
