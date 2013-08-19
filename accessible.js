@@ -49,7 +49,7 @@ var editor = window.editor = CodeMirror.fromTextArea(myTextArea, {
         extraKeys: {"Ctrl-Q": "toggleComment"}
 });
 
-var editor = window.editor = CodeMirror.fromTextArea(myTextArea, {
+var editor2 = window.editor2 = CodeMirrorOriginal.fromTextArea(clonedTextArea, {
         lineNumbers: true,
         matchBrackets: true,
         continueComments: "Enter",

@@ -1,6 +1,7 @@
 // TODO actually recognize syntax of TypeScript constructs
 
-CodeMirror.defineMode("javascript", function(config, parserConfig) {
+
+var opts= function(config, parserConfig) {
   var indentUnit = config.indentUnit;
   var statementIndent = parserConfig.statementIndent;
   var jsonMode = parserConfig.json;
@@ -467,8 +468,10 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     helperType: jsonMode ? "json" : "javascript",
     jsonMode: jsonMode
   };
-});
+};
 
+CodeMirror.defineMode("javascript", opts );
+CodeMirrorOriginal.defineMode("javascript", opts );
 CodeMirror.defineMIME("text/javascript", "javascript");
 CodeMirror.defineMIME("text/ecmascript", "javascript");
 CodeMirror.defineMIME("application/javascript", "javascript");
