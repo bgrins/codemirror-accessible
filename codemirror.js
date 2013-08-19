@@ -93,8 +93,7 @@ window.CodeMirror = (function() {
   function makeDisplay(place, docStart) {
     var d = {};
 
-    var input = d.input = elt("textarea", null, null, "/*position: absolute; padding: 0; width: 1px; height: 1em; outline: none; font-size: 4px;*/");
-    //var input = d.input = elt("textarea", null, null, "position: absolute; padding: 0; width: 1px; height: 1em; outline: none; font-size: 4px;");
+    var input = d.input = elt("textarea", null, null, "position: absolute; padding: 0; width: 1px; height: 1em; outline: none; font-size: 4px;");
     if (webkit) input.style.width = "1000px";
     else input.setAttribute("wrap", "off");
     // if border: 0; -- iOS fails to open keyboard (issue #1287)
@@ -102,8 +101,7 @@ window.CodeMirror = (function() {
     input.setAttribute("autocorrect", "off"); input.setAttribute("autocapitalize", "off"); input.setAttribute("spellcheck", "false");
 
     // Wraps and hides input textarea
-    d.inputDiv = elt("div", [input], null, "/*overflow: hidden;*/ position: relative; width: 3px; height: 0px; ");
-    //d.inputDiv = elt("div", [input], null, "overflow: hidden; position: relative; width: 3px; height: 0px;");
+    d.inputDiv = elt("div", [input], null, "overflow: hidden; position: relative; width: 3px; height: 0px;");
     // The actual fake scrollbars.
     d.scrollbarH = elt("div", [elt("div", null, null, "height: 1px")], "CodeMirror-hscrollbar");
     d.scrollbarV = elt("div", [elt("div", null, null, "width: 1px")], "CodeMirror-vscrollbar");
@@ -1450,13 +1448,12 @@ window.CodeMirror = (function() {
   // supported or compatible enough yet to rely on.)
   function readInput(cm) {
     var input = cm.display.input, prevInput = cm.display.prevInput, doc = cm.doc, sel = doc.sel;
-    if (!cm.state.focused || hasSelection(input) || isReadOnly(cm) || cm.state.disableInput) return false;
+    if (!cm.state.focused || hasSelection(input) || isReadOnly(cm) || cm.state.disableInput || cm.state.accessibleTextareaWait) return false;
     if (cm.state.pasteIncoming && cm.state.fakedLastChar) {
       input.value = input.value.substring(0, input.value.length - 1);
       cm.state.fakedLastChar = false;
     }
     var text = input.value;
-    console.log(text, prevInput, text === prevInput);
     if (text == prevInput && posEq(sel.from, sel.to)) return false;
     if (ie && !ie_lt9 && cm.display.inputHasSelection === text) {
       resetInput(cm, true);
@@ -1466,7 +1463,6 @@ window.CodeMirror = (function() {
     var withOp = !cm.curOp;
     if (withOp) startOperation(cm);
     sel.shift = false;
-
     var same = 0, l = Math.min(prevInput.length, text.length);
     while (same < l && prevInput.charCodeAt(same) == text.charCodeAt(same)) ++same;
     var from = sel.from, to = sel.to;
@@ -1478,8 +1474,6 @@ window.CodeMirror = (function() {
     var updateInput = cm.curOp.updateInput;
     var changeEvent = {from: from, to: to, text: splitLines(text.slice(same)),
                        origin: cm.state.pasteIncoming ? "paste" : "+input"};
-
-                       console.log(changeEvent)
     makeChange(cm.doc, changeEvent, "end");
     cm.curOp.updateInput = updateInput;
     signalLater(cm, "inputRead", cm, changeEvent);
@@ -1492,7 +1486,6 @@ window.CodeMirror = (function() {
   }
 
   function resetInput(cm, user) {
-    return;
     var minimal, selected, doc = cm.doc;
     if (!posEq(doc.sel.from, doc.sel.to)) {
       cm.display.prevInput = "";
@@ -1502,11 +1495,12 @@ window.CodeMirror = (function() {
       cm.display.input.value = content;
       if (cm.state.focused) selectInput(cm.display.input);
       if (ie && !ie_lt9) cm.display.inputHasSelection = content;
-    } else if (user) {
+    } else if (user && !cm.state.accessibleTextareaWait) {
+      // console.log("resetting", force);
+      // if (!force) {return;}
       cm.display.prevInput = cm.display.input.value = "";
       if (ie && !ie_lt9) cm.display.inputHasSelection = null;
     }
-
     cm.display.inaccurateSelection = minimal;
   }
 
@@ -2096,6 +2090,13 @@ window.CodeMirror = (function() {
     cm.doc.sel.shift = code == 16 || e.shiftKey;
     // First give onKeyEvent option a chance to handle this.
     var handled = handleKeyBinding(cm, e);
+
+    if (!handled && cm.state.accessibleTextareaWait) {
+      cm.state.accessibleTextareaWait = false;
+      clearTimeout(cm.state.accessiblityTimeout);
+      resetInput(cm, true);
+    }
+
     if (opera) {
       lastStoppedKey = handled ? code : null;
       // Opera has no cut event... we try to at least catch the key combo
@@ -2280,6 +2281,7 @@ window.CodeMirror = (function() {
   // change is a {from, to, text [, origin]} object
   function makeChange(doc, change, selUpdate, ignoreReadOnly) {
     if (doc.cm) {
+      console.log("HERE!!!");
       if (!doc.cm.curOp) return operation(doc.cm, makeChange)(doc, change, selUpdate, ignoreReadOnly);
       if (doc.cm.state.suppressEdits) return;
     }
@@ -2503,6 +2505,53 @@ window.CodeMirror = (function() {
       setSelection(doc, pos, other || pos, bias);
     }
     if (doc.cm) doc.cm.curOp.userSelChange = true;
+
+
+    if (doc.cm) {
+
+
+      var from = doc.sel.from;
+      var to = doc.sel.to;
+
+      if (posEq(from, to)) {
+        console.log("POS EQ");
+        var fromOffset = from.ch;
+        var toOffset = to.ch;
+        var lineNum = 0;
+        doc.eachLine(0, to.line, function(l) {
+          if (lineNum < from.line) {
+            fromOffset += l.text.length + 1;
+          }
+          toOffset += l.text.length + 1;
+          lineNum++;
+        });
+
+        //var prevInput = doc.cm.display.prevInput;
+        //var input = doc.cm.display.input.value;
+
+        //doc.cm.display._waiting = true;
+        var prevInput = doc.cm.display.prevInput;
+        var prevValue = doc.cm.display.input.value;
+        //doc.cm.display.prevInput = doc.cm.getValue();
+        doc.cm.display.input.value = doc.cm.getValue();
+        doc.cm.display.input.setSelectionRange(fromOffset, toOffset);
+
+
+        doc.cm.state.accessibleTextareaWait = true;
+
+        clearTimeout(doc.cm.state.accessiblityTimeout);
+        doc.cm.state.accessiblityTimeout = setTimeout(function() {
+          //doc.cm.display.prevInput = prevInput;
+          //doc.cm.display.input.value = prevValue;
+
+          //doc.cm.display._waiting = false;
+          doc.cm.state.accessibleTextareaWait = false;
+          resetInput(doc.cm, true);
+        }, 5000);
+
+      }
+    }
+
   }
 
   function filterSelectionChange(doc, anchor, head) {
@@ -2517,6 +2566,7 @@ window.CodeMirror = (function() {
   // updateDoc, since they have to be expressed in the line
   // numbers before the update.
   function setSelection(doc, anchor, head, bias, checkAtomic) {
+    console.log("setting selection");
     if (!checkAtomic && hasHandler(doc, "beforeSelectionChange") || doc.cm && hasHandler(doc.cm, "beforeSelectionChange")) {
       var filtered = filterSelectionChange(doc, anchor, head);
       head = filtered.head;
@@ -2531,82 +2581,16 @@ window.CodeMirror = (function() {
     if (checkAtomic || !posEq(head, sel.head))
       head = skipAtomic(doc, head, bias, checkAtomic != "push");
 
+    if (posEq(sel.anchor, anchor) && posEq(sel.head, head)) return;
 
-    if (doc.cm) {
-      // TODO BRIAN
-      var inv = posLess(head, anchor);
-      var from = inv ? head : anchor;
-      var to = inv ? anchor : head;
-/*
-      var fromOffset = from.ch;
-      doc.eachLine(0, from.line, function(l) {
-        fromOffset += l.text.length + 1;
-      });
-
-      var toOffset = to.ch;
-      doc.eachLine(0, to.line, function(l) {
-        toOffset += l.text.length + 1;
-      });
-*/
-
-      var fromOffset = from.ch;
-      var toOffset = to.ch;
-      var lineNum = 0;
-      doc.eachLine(0, to.line, function(l) {
-        if (lineNum < from.line) {
-          fromOffset += l.text.length + 1;
-        }
-        toOffset += l.text.length + 1;
-        lineNum++;
-      });
-
-      //var prevInput = doc.cm.display.prevInput;
-      //var input = doc.cm.display.input.value;
-      doc.cm.display.prevInput = doc.cm.display.input.value = doc.cm.getValue();
-      doc.cm.display.input.setSelectionRange(fromOffset, toOffset);
-      //doc.cm.display.prevInput = prevInput;
-      //doc.cm.display.input.value = input;
-
-/*
-
-      // Has to be the whole textarea for some reason.  Otherwise there are intermittent
-      // 'blanks'.
-      var rangeMinLine = Math.max(from.line - 4, 0);
-      var rangeMaxLine = Math.min(to.line + 4, doc.cm.lineCount() );
-      var fromOffset = from.ch;
-      var toOffset = to.ch;
-
-      doc.eachLine(rangeMinLine, from.line, function(l) {
-        fromOffset += l.text.length + 1;
-      });
-      doc.eachLine(rangeMinLine, to.line, function(l) {
-        toOffset += l.text.length + 1;
-      });
-      var selectedRange = doc.cm.getRange(
-        {line: rangeMinLine, ch: 0 },
-        {line: rangeMaxLine, ch: 0 }
-      );
-
-      console.log(
-        selectedRange
-      );
-      doc.cm.display.prevInput = doc.cm.display.input.value = selectedRange;
-      doc.cm.display.input.setSelectionRange(fromOffset, toOffset);
-*/
-    }
-
-    if (posEq(sel.anchor, anchor) && posEq(sel.head, head)) {
-      return;
-    }
     sel.anchor = anchor; sel.head = head;
     var inv = posLess(head, anchor);
     sel.from = inv ? head : anchor;
     sel.to = inv ? anchor : head;
 
-    if (doc.cm) {
+    if (doc.cm)
       doc.cm.curOp.updateInput = doc.cm.curOp.selectionChanged =
         doc.cm.curOp.cursorActivity = true;
-    }
 
     signalLater(doc, "cursorActivity", doc);
   }
@@ -3149,7 +3133,6 @@ window.CodeMirror = (function() {
     },
 
     moveH: operation(null, function(dir, unit) {
-      console.log("Move H");
       var sel = this.doc.sel, pos;
       if (sel.shift || sel.extend || posEq(sel.from, sel.to))
         pos = findPosH(this.doc, sel.head, dir, unit, this.options.rtlMoveVisually);
@@ -4572,6 +4555,7 @@ window.CodeMirror = (function() {
   // DOCUMENT DATA STRUCTURE
 
   function updateDoc(doc, change, markedSpans, selAfter, estimateHeight) {
+    console.log("UPDATE DOC");
     function spansFor(n) {return markedSpans ? markedSpans[n] : null;}
     function update(line, text, spans) {
       updateLine(line, text, spans, estimateHeight);
