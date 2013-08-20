@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-  <title>CodeMirror Accessibility Demo</title>
+  <title>CodeMirror Accessibility</title>
 
   <script type="text/javascript" src="codemirror-accessible.js"></script>
   <script type="text/javascript" src="codemirror-original.js"></script>
@@ -13,7 +13,7 @@
   <style type="text/css">
     html, body { margin: 0; padding: 0; }
     body { padding: 10px; padding-bottom: 40px; }
-    h3 { margin: 30px 0; }
+    h4 { margin: 30px 0; }
     .CodeMirror { height: 500px; width: 90%; margin: 0 auto; border: solid 1px #ccc; }
     .right {text-align: right;}
     .yes { color: #33aa33;}
@@ -28,12 +28,15 @@
 
 <h1>CodeMirror Accessibility</h1>
 <p>
-   CodeMirror uses a hidden textarea to accept input events, track user selections, provide copy/paste, etc.
+  CodeMirror does not currently fully support screen reader software.  Since CodeMirror <a href="http://codemirror.net/doc/internals.html">does not use contentEditable</a> internally, an extra effort must be made to provide this accessibility.
 </p>
 
 <h2>Analysis of Current Functionality</h2>
 <p>
-  Using <a href="http://www.nvaccess.org/">NVDA</a>, a screen reader for Windows, this is what I see today with version 3.15 downloaded from <a href="http://codemirror.net/">http://codemirror.net/</a>:
+   CodeMirror uses a hidden textarea to accept input events, track user selections, provide copy/paste, etc.  This has the benefit of some native input working correctly, but since the textarea is not a mirror of the content being entered, other things do not work.
+</p>
+<p>
+  Using <a href="http://www.nvaccess.org/">NVDA</a>, a screen reader for Windows, this is the behavior seen today with version 3.15 downloaded from <a href="http://codemirror.net/">http://codemirror.net/</a>:
 </p>
 <ul>
   <li>Text based input <b class="yes">works</b>, as the input is being added directly into the hidden textarea</li>
@@ -64,13 +67,23 @@
 </p>
 
 
+<h3>Implementation Considerations</h3>
+<p>
+  I had hoped that this could be structured as a plugin, and could avoid touching the CodeMirror internals, but that proved to not be possible.  That said, it avoids large modifications to the <code>readInput</code> and <code>resetInput</code> functions, and could easily be hidden behind a property.
+</p>
+<p>
+  This still needs to be tested with more advanced CodeMirror features, like <a href="http://codemirror.net/doc/manual.html#markText">atomic markers</a> and <a href="http://codemirror.net/doc/manual.html#api_doc">linked documents</a>, and with other screen readers.  Please let me know if you'd be able to help with testing these features or can give feedback with different screen readers.
+</p>
+
 <h3>Performance Considerations</h3>
 <p>
-  The downside is that this could potentially cause a performance bottleneck.  The selection was intentionally clipped with a low limit, and every time the selection changes, we need to set the textarea value to the current line of the CodeMirror.
+  The downside is that this could potentially slow things down.  The selection was intentionally clipped with a low limit, and every time the selection changes, we need to set the textarea value to the current line of the CodeMirror.  Performance on very <a href="https://github.com/marijnh/CodeMirror/issues/1022">long lines with CodeMirror</a> are a known issue, and copying / selecting this data into a textarea is an extra step (though probably not significant compared to text measuring).
 </p>
 <p>
   Originally, I was setting the textarea's value to the entire content (which seems to be best for the screenreader), but there is a major impact is caused by the computation of the selectionRange in this case.  Textareas <a href="https://developer.mozilla.org/en-US/docs/Web/API/Input.setSelectionRange">setSelectionRange</a> method takes an absolute start and end value, while CodeMirror operates on individual lines.  So we need to count from 0 to currently selected line and add the length of each line to arrive there.
 </p>
+
+<h2>Demos</h2>
 <p>
   This is working in the demo below.  Compare the first CodeMirror (with the fix applied) to the second CodeMirror (using the original version).
 </p>
@@ -81,7 +94,7 @@
 
 <hr />
 
-<h3 id="demo">CodeMirror With Accessibility Fix</h3>
+<h4 id="demo">CodeMirror With Accessibility Fix</h4>
 <textarea id="editor">
 /*!
  * jQuery JavaScript Library v1.10.2
@@ -9878,10 +9891,10 @@ if ( typeof module === "object" && module && typeof module.exports === "object" 
 
 <hr />
 
-<h3>CodeMirror Original</h3>
+<h4>CodeMirror Original</h4>
 <div id="original-demo"></div>
 
-<h3>Normal Textarea</h3>
+<h4>Normal Textarea</h4>
 <div id="textarea-demo">
   <textarea id="textarea-editor"></textarea>
 </div>
