@@ -2092,9 +2092,7 @@ window.CodeMirror = (function() {
 
     // On text input if value was temporaritly set for a screenreader, clear it out.
     if (!handled && cm.state.accessibleTextareaWaiting) {
-      cm.state.accessibleTextareaWaiting = false;
-      clearTimeout(cm.state.accessibleTextareaTimeout);
-      resetInput(cm, true);
+      clearAccessibleTextarea(cm);
     }
 
     if (opera) {
@@ -2507,68 +2505,28 @@ window.CodeMirror = (function() {
 
 
     if (doc.cm) {
-
-
       var from = doc.sel.from;
       var to = doc.sel.to;
 
-      if (posEq(from, to)) {
-        console.log("POS EQ");
-
-        /*
-        var fromOffset = from.ch;
-        var toOffset = to.ch;
-        var lineNum = 0;
-        doc.eachLine(0, to.line, function(l) {
-          if (lineNum < from.line) {
-            fromOffset += l.text.length + 1;
-          }
-          toOffset += l.text.length + 1;
-          lineNum++;
-        });
-        var selectedRange = doc.cm.getValue();
-*/
-
-       //var rangeLine = from.line;
-
-       /*
-       var rangeMinLine = Math.max(from.line - 3, 0);
-       var rangeMaxLine = Math.min(to.line + 3, doc.cm.lineCount() );
-       var fromOffset = from.ch;
-       var toOffset = to.ch;
-
-       doc.eachLine(rangeMinLine, from.line, function(l) {
-         fromOffset += l.text.length + 1;
-       });
-
-       doc.eachLine(rangeMinLine, to.line, function(l) {
-         toOffset += l.text.length + 1;
-       });
-
-       var selectedRange = doc.cm.getRange(
-         {line: rangeMinLine, ch: 0 },
-         {line: rangeMaxLine, ch: 0 }
-       );
-
-        doc.cm.state.accessibleTextareaWaiting = true;
-        doc.cm.display.input.value = selectedRange;
-        doc.cm.display.input.setSelectionRange(fromOffset, toOffset);
-
-        */
+      if (posEq(from, to) && doc.cm.display.input.setSelectionRange) {
+        clearAccessibleTextarea(doc.cm);
 
         doc.cm.state.accessibleTextareaWaiting = true;
         doc.cm.display.input.value = doc.getLine(from.line);
         doc.cm.display.input.setSelectionRange(from.ch, from.ch);
 
-        clearTimeout(doc.cm.state.accessibleTextareaTimeout);
         doc.cm.state.accessibleTextareaTimeout = setTimeout(function() {
-          doc.cm.state.accessibleTextareaWaiting = false;
-          resetInput(doc.cm, true);
+          clearAccessibleTextarea(doc.cm);
         }, 80);
-
       }
     }
 
+  }
+
+  function clearAccessibleTextarea(cm) {
+    clearTimeout(cm.state.accessibleTextareaTimeout);
+    cm.state.accessibleTextareaWaiting = false;
+    resetInput(cm, true);
   }
 
   function filterSelectionChange(doc, anchor, head) {
