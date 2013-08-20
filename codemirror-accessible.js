@@ -93,8 +93,7 @@ window.CodeMirror = (function() {
   function makeDisplay(place, docStart) {
     var d = {};
 
-    var input = d.input = elt("textarea", null, null, "/*position: absolute; padding: 0; width: 1px; height: 1em; outline: none; font-size: 4px;*/");
-    //var input = d.input = elt("textarea", null, null, "position: absolute; padding: 0; width: 1px; height: 1em; outline: none; font-size: 4px;");
+    var input = d.input = elt("textarea", null, null, "position: absolute; padding: 0; width: 1px; height: 1em; outline: none; font-size: 4px;");
     if (webkit) input.style.width = "1000px";
     else input.setAttribute("wrap", "off");
     // if border: 0; -- iOS fails to open keyboard (issue #1287)
@@ -102,8 +101,7 @@ window.CodeMirror = (function() {
     input.setAttribute("autocorrect", "off"); input.setAttribute("autocapitalize", "off"); input.setAttribute("spellcheck", "false");
 
     // Wraps and hides input textarea
-    d.inputDiv = elt("div", [input], null, "/*overflow: hidden;*/ position: relative; width: 3px; height: 0px; ");
-    //d.inputDiv = elt("div", [input], null, "overflow: hidden; position: relative; width: 3px; height: 0px;");
+    d.inputDiv = elt("div", [input], null, "overflow: hidden; position: relative; width: 3px; height: 0px;");
     // The actual fake scrollbars.
     d.scrollbarH = elt("div", [elt("div", null, null, "height: 1px")], "CodeMirror-hscrollbar");
     d.scrollbarV = elt("div", [elt("div", null, null, "width: 1px")], "CodeMirror-vscrollbar");
@@ -1425,9 +1423,7 @@ window.CodeMirror = (function() {
   // INPUT HANDLING
 
   function slowPoll(cm) {
-    return;
     if (cm.display.pollingFast) return;
-    console.log("Slow poll");
     cm.display.poll.set(cm.options.pollInterval, function() {
       readInput(cm);
       if (cm.state.focused) slowPoll(cm);
@@ -1436,7 +1432,6 @@ window.CodeMirror = (function() {
 
   function fastPoll(cm) {
     var missed = false;
-    console.log("Fast poll");
     cm.display.pollingFast = true;
     function p() {
       var changed = readInput(cm);
@@ -1453,13 +1448,12 @@ window.CodeMirror = (function() {
   // supported or compatible enough yet to rely on.)
   function readInput(cm) {
     var input = cm.display.input, prevInput = cm.display.prevInput, doc = cm.doc, sel = doc.sel;
-    if (!cm.state.focused || hasSelection(input) || isReadOnly(cm) || cm.state.disableInput) return false;
+    if (!cm.state.focused || hasSelection(input) || isReadOnly(cm) || cm.state.disableInput || cm.state.accessibleTextareaWaiting) return false;
     if (cm.state.pasteIncoming && cm.state.fakedLastChar) {
       input.value = input.value.substring(0, input.value.length - 1);
       cm.state.fakedLastChar = false;
     }
     var text = input.value;
-    console.log(text, prevInput, text === prevInput);
     if (text == prevInput && posEq(sel.from, sel.to)) return false;
     if (ie && !ie_lt9 && cm.display.inputHasSelection === text) {
       resetInput(cm, true);
@@ -1469,11 +1463,8 @@ window.CodeMirror = (function() {
     var withOp = !cm.curOp;
     if (withOp) startOperation(cm);
     sel.shift = false;
-
-    var same = 0;//cm.display.input.selectionStart;
-    var l = Math.min(prevInput.length, text.length);
+    var same = 0, l = Math.min(prevInput.length, text.length);
     while (same < l && prevInput.charCodeAt(same) == text.charCodeAt(same)) ++same;
-    console.log(same, l);
     var from = sel.from, to = sel.to;
     if (same < prevInput.length)
       from = Pos(from.line, from.ch - (prevInput.length - same));
@@ -1483,34 +1474,31 @@ window.CodeMirror = (function() {
     var updateInput = cm.curOp.updateInput;
     var changeEvent = {from: from, to: to, text: splitLines(text.slice(same)),
                        origin: cm.state.pasteIncoming ? "paste" : "+input"};
-
     makeChange(cm.doc, changeEvent, "end");
     cm.curOp.updateInput = updateInput;
     signalLater(cm, "inputRead", cm, changeEvent);
 
-    // if (text.length > 1000 || text.indexOf("\n") > -1) input.value = cm.display.prevInput = "";
-    // else cm.display.prevInput = text;
+    if (text.length > 1000 || text.indexOf("\n") > -1) input.value = cm.display.prevInput = "";
+    else cm.display.prevInput = text;
     if (withOp) endOperation(cm);
     cm.state.pasteIncoming = false;
     return true;
   }
 
   function resetInput(cm, user) {
-    return;
     var minimal, selected, doc = cm.doc;
     if (!posEq(doc.sel.from, doc.sel.to)) {
       cm.display.prevInput = "";
-      minimal = hasCopyEvent &&
+      minimal = false && hasCopyEvent &&
         (doc.sel.to.line - doc.sel.from.line > 100 || (selected = cm.getSelection()).length > 1000);
       var content = minimal ? "-" : selected || cm.getSelection();
       cm.display.input.value = content;
       if (cm.state.focused) selectInput(cm.display.input);
       if (ie && !ie_lt9) cm.display.inputHasSelection = content;
-    } else if (user) {
+    } else if (user && !cm.state.accessibleTextareaWaiting) {
       cm.display.prevInput = cm.display.input.value = "";
       if (ie && !ie_lt9) cm.display.inputHasSelection = null;
     }
-
     cm.display.inaccurateSelection = minimal;
   }
 
@@ -2099,10 +2087,13 @@ window.CodeMirror = (function() {
     // IE does strange things with escape.
     cm.doc.sel.shift = code == 16 || e.shiftKey;
     // First give onKeyEvent option a chance to handle this.
-    console.log("handling", cm.display.input.value);
-
-    //cm.display.input.value = cm.display.prevInput = "";
     var handled = handleKeyBinding(cm, e);
+
+    // On text input if value was temporaritly set for a screenreader, clear it out.
+    if (!handled && cm.state.accessibleTextareaWaiting) {
+      clearAccessibleTextarea(cm);
+    }
+
     if (opera) {
       lastStoppedKey = handled ? code : null;
       // Opera has no cut event... we try to at least catch the key combo
@@ -2510,6 +2501,31 @@ window.CodeMirror = (function() {
       setSelection(doc, pos, other || pos, bias);
     }
     if (doc.cm) doc.cm.curOp.userSelChange = true;
+
+
+    if (doc.cm) {
+      var from = doc.sel.from;
+      var to = doc.sel.to;
+
+      if (posEq(from, to) && doc.cm.display.input.setSelectionRange) {
+        clearAccessibleTextarea(doc.cm);
+
+        doc.cm.state.accessibleTextareaWaiting = true;
+        doc.cm.display.input.value = doc.getLine(from.line);
+        doc.cm.display.input.setSelectionRange(from.ch, from.ch);
+
+        doc.cm.state.accessibleTextareaTimeout = setTimeout(function() {
+          clearAccessibleTextarea(doc.cm);
+        }, 80);
+      }
+    }
+
+  }
+
+  function clearAccessibleTextarea(cm) {
+    clearTimeout(cm.state.accessibleTextareaTimeout);
+    cm.state.accessibleTextareaWaiting = false;
+    resetInput(cm, true);
   }
 
   function filterSelectionChange(doc, anchor, head) {
@@ -2538,82 +2554,16 @@ window.CodeMirror = (function() {
     if (checkAtomic || !posEq(head, sel.head))
       head = skipAtomic(doc, head, bias, checkAtomic != "push");
 
+    if (posEq(sel.anchor, anchor) && posEq(sel.head, head)) return;
 
-    if (doc.cm) {
-      // TODO BRIAN
-      var inv = posLess(head, anchor);
-      var from = inv ? head : anchor;
-      var to = inv ? anchor : head;
-/*
-      var fromOffset = from.ch;
-      doc.eachLine(0, from.line, function(l) {
-        fromOffset += l.text.length + 1;
-      });
-
-      var toOffset = to.ch;
-      doc.eachLine(0, to.line, function(l) {
-        toOffset += l.text.length + 1;
-      });
-*/
-
-      var fromOffset = from.ch;
-      var toOffset = to.ch;
-      var lineNum = 0;
-      doc.eachLine(0, to.line, function(l) {
-        if (lineNum < from.line) {
-          fromOffset += l.text.length + 1;
-        }
-        toOffset += l.text.length + 1;
-        lineNum++;
-      });
-
-      //var prevInput = doc.cm.display.prevInput;
-      //var input = doc.cm.display.input.value;
-      doc.cm.display.prevInput = doc.cm.display.input.value = doc.cm.getValue();
-      doc.cm.display.input.setSelectionRange(fromOffset, toOffset);
-      //doc.cm.display.prevInput = prevInput;
-      //doc.cm.display.input.value = input;
-
-/*
-
-      // Has to be the whole textarea for some reason.  Otherwise there are intermittent
-      // 'blanks'.
-      var rangeMinLine = Math.max(from.line - 4, 0);
-      var rangeMaxLine = Math.min(to.line + 4, doc.cm.lineCount() );
-      var fromOffset = from.ch;
-      var toOffset = to.ch;
-
-      doc.eachLine(rangeMinLine, from.line, function(l) {
-        fromOffset += l.text.length + 1;
-      });
-      doc.eachLine(rangeMinLine, to.line, function(l) {
-        toOffset += l.text.length + 1;
-      });
-      var selectedRange = doc.cm.getRange(
-        {line: rangeMinLine, ch: 0 },
-        {line: rangeMaxLine, ch: 0 }
-      );
-
-      console.log(
-        selectedRange
-      );
-      doc.cm.display.prevInput = doc.cm.display.input.value = selectedRange;
-      doc.cm.display.input.setSelectionRange(fromOffset, toOffset);
-*/
-    }
-
-    if (posEq(sel.anchor, anchor) && posEq(sel.head, head)) {
-      return;
-    }
     sel.anchor = anchor; sel.head = head;
     var inv = posLess(head, anchor);
     sel.from = inv ? head : anchor;
     sel.to = inv ? anchor : head;
 
-    if (doc.cm) {
+    if (doc.cm)
       doc.cm.curOp.updateInput = doc.cm.curOp.selectionChanged =
         doc.cm.curOp.cursorActivity = true;
-    }
 
     signalLater(doc, "cursorActivity", doc);
   }
@@ -3156,7 +3106,6 @@ window.CodeMirror = (function() {
     },
 
     moveH: operation(null, function(dir, unit) {
-      console.log("Move H");
       var sel = this.doc.sel, pos;
       if (sel.shift || sel.extend || posEq(sel.from, sel.to))
         pos = findPosH(this.doc, sel.head, dir, unit, this.options.rtlMoveVisually);

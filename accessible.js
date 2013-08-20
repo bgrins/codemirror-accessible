@@ -11,7 +11,6 @@ var myScreenreader = document.getElementById("editor-screenreader");
 var myContentEditable = document.getElementById("content-editable");
 var button = document.getElementById("toggle-textarea-visibility");
 
-console.log("Button")
 button.onclick = toggleTextareaDisplay;
 
 var editor = window.editor = CodeMirror.fromTextArea(myTextArea, {
