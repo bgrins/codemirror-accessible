@@ -1,4 +1,5 @@
 window.onload=function(){
+
 var myTextArea = document.getElementById("editor");
 var textareaEditor = document.getElementById('textarea-editor');
 textareaEditor.value = myTextArea.value;
