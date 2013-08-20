@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-  <title>CodeMirror Accessibility</title>
+  <title>CodeMirror Accessible</title>
 
   <script type="text/javascript" src="codemirror-accessible.js"></script>
   <script type="text/javascript" src="codemirror-original.js"></script>
@@ -78,7 +78,7 @@
 
 <h3>Implementation Considerations</h3>
 <p>
-  I had hoped that this could be structured as a plugin, and could avoid touching the CodeMirror internals, but that proved to not be possible.  That said, it avoids large modifications to the <code>readInput</code> and <code>resetInput</code> functions, and could easily be hidden behind a property.  View the <a href="https://github.com/bgrins/codemirror-accessible/compare/df4df2366fe254f3ff528e27928af6eae6b9baf5...master#diff-17ed72d8617eb30a518f39b4e72a2033">changes in codemirror-accessible.js</a>
+  I had hoped that this could be structured as a plugin, and could avoid touching the CodeMirror internals, but that proved to not be possible.  That said, it avoids large modifications to the <code>readInput</code> and <code>resetInput</code> functions, and could easily be hidden behind a property.  <b>View the <a href="https://github.com/bgrins/codemirror-accessible/compare/df4df2366fe254f3ff528e27928af6eae6b9baf5...master#diff-17ed72d8617eb30a518f39b4e72a2033">changes in codemirror-accessible.js</a>.</b>
 </p>
 <p>
   This still needs to be tested with more advanced CodeMirror features, like <a href="http://codemirror.net/doc/manual.html#markText">atomic markers</a> and <a href="http://codemirror.net/doc/manual.html#api_doc">linked documents</a>, and with other screen readers.  Please let me know if you'd be able to help with testing these features or can give feedback with different screen readers.
@@ -9905,7 +9905,7 @@ if ( typeof module === "object" && module && typeof module.exports === "object" 
 
 <h4>Normal Textarea</h4>
 <div id="textarea-demo">
-  <textarea id="textarea-editor"></textarea>
+  <textarea id="textarea-editor" spellcheck="false"></textarea>
 </div>
 
 </body>
