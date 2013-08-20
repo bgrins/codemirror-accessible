@@ -2488,7 +2488,7 @@ window.CodeMirror = (function() {
         clearAccessibleTextarea(doc.cm);
 
         doc.cm.state.accessibleTextareaWaiting = true;
-        doc.cm.display.input.value = doc.getLine(from.line);
+        doc.cm.display.input.value = doc.getLine(from.line) + "\n";
         doc.cm.display.input.setSelectionRange(from.ch, from.ch);
 
         doc.cm.state.accessibleTextareaTimeout = setTimeout(function() {
