@@ -1480,7 +1480,7 @@ window.CodeMirror = (function() {
     var minimal, selected, doc = cm.doc;
     if (!posEq(doc.sel.from, doc.sel.to)) {
       cm.display.prevInput = "";
-      minimal = hasCopyEvent &&
+      minimal = false && hasCopyEvent &&
         (doc.sel.to.line - doc.sel.from.line > 100 || (selected = cm.getSelection()).length > 1000);
       var content = minimal ? "-" : selected || cm.getSelection();
       cm.display.input.value = content;
