@@ -52,4 +52,5 @@ function toggleTextareaDisplay() {
     textareaVisible = !textareaVisible;
 }
 
+
 };
