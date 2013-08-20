@@ -49,13 +49,13 @@
 </p>
 <ul>
   <li>Text based input <b class="yes">works</b>, as the input is being added directly into the hidden textarea</li>
-  <li>Selection <b class="kindof">works some of the time</b>, as it populates the textarea with the current selection.  It fails when the selection is over 100 lines or 1000 characters.  In this case it replaces the character with a '-'</li>
+  <li>Selection <b class="kindof">works some of the time</b>, as it populates the textarea with the current selection.  It fails when the selection is over 100 lines or 1000 characters.  In this case it replaces the character with a <code>-</code> and marks <code>cm.display.inaccurateSelection</code> for cleanup later</li>
   <li>Cursor movement <b class="no">does not work</b>.  This is because the textarea is usually left empty, cleared out on regular intervals</li>
   <li>
     Entering / exiting the editor <b class="no">does not work</b>.  It requires mouse usage to start editing (though you can enter and scan the text without it).  Compare the following behavior with the normal textarea at the bottom of the page.
     <ul>
       <li>
-  The tab button's behavior is overriden as you would expect with a code editor, which makes it hard to leave the field.  Perhaps a key like <code>escape</code> could be used to blur the editor?
+  The <code>tab</code> button's behavior is overriden as you would expect with a code editor, which makes it hard to leave the field.  Perhaps a key like <code>escape</code> could be used to blur the editor?
       </li>
       <li>
   Pressing <code>up</code> or <code>down</code> on the first or last line of the editor, repectively does not allow NVDA to move onto the next element in the page.
