@@ -11,12 +11,16 @@
   <link rel="stylesheet" type="text/css" href="codemirror.css">
 
   <style type="text/css">
+    html, body { margin: 0; padding: 0; }
+    body { padding: 10px; padding-bottom: 40px; }
     h3 { margin: 30px 0; }
-    .CodeMirror { height: 500px; width: 95%; margin: 0 auto; }
+    .CodeMirror { height: 500px; width: 90%; margin: 0 auto; border: solid 1px #ccc; }
     .right {text-align: right;}
     .yes { color: #33aa33;}
     .no { color: #aa3333;}
     .kindof { color: orange;}
+    code { color: #660000; }
+    #textarea-editor { width: 90%; margin-left: 5%; height: 500px;}
   </style>
 
 </head>
@@ -29,21 +33,43 @@
 
 <h2>Analysis of Current Functionality</h2>
 <p>
-  Using NVDA, a screen reader for Windows, this is what I see today with version 3.15 downloaded from <a href="http://codemirror.net/">http://codemirror.net/</a>:
+  Using <a href="http://www.nvaccess.org/">NVDA</a>, a screen reader for Windows, this is what I see today with version 3.15 downloaded from <a href="http://codemirror.net/">http://codemirror.net/</a>:
 </p>
 <ul>
   <li>Text based input <b class="yes">works</b>, as the input is being added directly into the hidden textarea</li>
   <li>Selection works <b class="kindof">some of the time</b>, as it populates the textarea with the current selection.  It fails when the selection is over 100 lines or 1000 characters.  In this case it replaces the character with a '-'</li>
   <li>Cursor movement <b class="no">does not</b> work.  This is because the textarea is usually left empty, cleared out on regular intervals</li>
-  <li>Entering / exiting the editor <b class="no">is buggy</b>.  It requires mouse usage to start editing (though you can enter and scan the text without it).  Additionally, the tab button's behavior is overriden as you would expect with a code editor, which makes it hard to leave the field.  Maybe someone with more experience with screen readers could comment on how to deal with this.  Send me a message at bgrinstead@mozilla.com or <a href="https://twitter.com/bgrins">@bgrins</a> if you have any ideas.</li>
+  <li>
+    Entering / exiting the editor <b class="no">is buggy</b>.  It requires mouse usage to start editing (though you can enter and scan the text without it).  Compare the following behavior with the normal textarea at the bottom of the page.
+    <ul>
+      <li>
+  Additionally, the tab button's behavior is overriden as you would expect with a code editor, which makes it hard to leave the field.
+      </li>
+      <li>
+  Pressing <code>up</code> or <code>down</code> on the first or last line of the editor, repectively does not allow NVDA to move onto the next element in the page.
+      </li>
+    </ul>
+    Please comment with suggestions on how to deal with this.  Send me a message at bgrinstead@mozilla.com or <a href="https://twitter.com/bgrins">@bgrins</a> if you have any ideas.</li>
 </ul>
 
 <h2>Possible Solution</h2>
 <p>
-  A solution involves resetting the <code>input</code> value to the CodeMirror's full value when the cursor location moves with an empty selection.  Then, by calling <code>input.setSelectionRange(from, to)</code> the actual selection location is being moved, and NVDA is able to detect the changes.  In addition, we do not clip the selection at any maximum limit.
+  A solution involves resetting the <code>input</code> value to the current line when the cursor location moves with an empty selection.  Then, by calling <code>input.setSelectionRange(from.ch, to.ch)</code> the actual selection location is being moved, and NVDA is able to detect the changes.  This value must stay in the textarea long enough for the screenreader to detect the change, but has to be cleared out quick enough for the next cursor movement to be read properly.  The quick clearing out could be made unnecessary by setting the value of the <code>textarea</code> to <code>CodeMirror.getValue()</code>, however this causes some major performance bottlenecks (see below).
 </p>
 <p>
-  The downside is that this could potentially cause a performance bottleneck.  The selection was intentionally clipped with a low limit, and even more impact is probably caused by the computation of the selectionRange.  Textareas <a href="https://developer.mozilla.org/en-US/docs/Web/API/Input.setSelectionRange">setSelectionRange</a> method takes an absolute start and end value, while CodeMirror operates on individual lines.  So we need to count from 0 to currently selected line and add the length of each line to arrive there.  Perhaps this could be enabled only optionally from the CodeMirror instance.
+  In addition, we do not clip the selection at any maximum limit to ensure that the selection is always consistent in the actual textarea.
+</p>
+<p>
+  <b>Still not fixed:</b> Entering / exiting the editor is still buggy.
+</p>
+
+
+<h3>Performance Considerations</h3>
+<p>
+  The downside is that this could potentially cause a performance bottleneck.  The selection was intentionally clipped with a low limit, and every time the selection changes, we need to set the textarea value to the current line of the CodeMirror.
+</p>
+<p>
+  Originally, I was setting the textarea's value to the entire content (which seems to be best for the screenreader), but there is a major impact is caused by the computation of the selectionRange in this case.  Textareas <a href="https://developer.mozilla.org/en-US/docs/Web/API/Input.setSelectionRange">setSelectionRange</a> method takes an absolute start and end value, while CodeMirror operates on individual lines.  So we need to count from 0 to currently selected line and add the length of each line to arrive there.
 </p>
 <p>
   This is working in the demo below.  Compare the first CodeMirror (with the fix applied) to the second CodeMirror (using the original version).
@@ -55,7 +81,7 @@
 
 <hr />
 
-<h3>CodeMirror With Accessibility Fix</h3>
+<h3 id="demo">CodeMirror With Accessibility Fix</h3>
 <textarea id="editor">
 /*!
  * jQuery JavaScript Library v1.10.2
@@ -9853,6 +9879,12 @@ if ( typeof module === "object" && module && typeof module.exports === "object" 
 <hr />
 
 <h3>CodeMirror Original</h3>
+<div id="original-demo"></div>
+
+<h3>Normal Textarea</h3>
+<div id="textarea-demo">
+  <textarea id="textarea-editor"></textarea>
+</div>
 
 </body>
 </html>

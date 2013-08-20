@@ -1,7 +1,11 @@
 window.onload=function(){
 var myTextArea = document.getElementById("editor");
+var textareaEditor = document.getElementById('textarea-editor');
+textareaEditor.value = myTextArea.value;
 var clonedTextArea = myTextArea.cloneNode();
-myTextArea.parentNode.appendChild(clonedTextArea);
+
+clonedTextArea.id = "editor2";
+document.getElementById("original-demo").appendChild(clonedTextArea);
 var myScreenreader = document.getElementById("editor-screenreader");
 
 var myContentEditable = document.getElementById("content-editable");
