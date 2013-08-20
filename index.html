@@ -78,7 +78,7 @@
 
 <h3>Implementation Considerations</h3>
 <p>
-  I had hoped that this could be structured as a plugin, and could avoid touching the CodeMirror internals, but that proved to not be possible.  That said, it avoids large modifications to the <code>readInput</code> and <code>resetInput</code> functions, and could easily be hidden behind a property.  View the <a href="https://github.com/bgrins/codemirror-accessible/compare/df4df2366fe254f3ff528e27928af6eae6b9baf5...caf628d52370d7a25ca2fbf31208deceee2d4f5a#diff-17ed72d8617eb30a518f39b4e72a2033">changes in codemirror-accessible.js</a>
+  I had hoped that this could be structured as a plugin, and could avoid touching the CodeMirror internals, but that proved to not be possible.  That said, it avoids large modifications to the <code>readInput</code> and <code>resetInput</code> functions, and could easily be hidden behind a property.  View the <a href="https://github.com/bgrins/codemirror-accessible/compare/df4df2366fe254f3ff528e27928af6eae6b9baf5...master#diff-17ed72d8617eb30a518f39b4e72a2033">changes in codemirror-accessible.js</a>
 </p>
 <p>
   This still needs to be tested with more advanced CodeMirror features, like <a href="http://codemirror.net/doc/manual.html#markText">atomic markers</a> and <a href="http://codemirror.net/doc/manual.html#api_doc">linked documents</a>, and with other screen readers.  Please let me know if you'd be able to help with testing these features or can give feedback with different screen readers.
