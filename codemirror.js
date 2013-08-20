@@ -1448,7 +1448,7 @@ window.CodeMirror = (function() {
   // supported or compatible enough yet to rely on.)
   function readInput(cm) {
     var input = cm.display.input, prevInput = cm.display.prevInput, doc = cm.doc, sel = doc.sel;
-    if (!cm.state.focused || hasSelection(input) || isReadOnly(cm) || cm.state.disableInput || cm.state.accessibleTextareaWait) return false;
+    if (!cm.state.focused || hasSelection(input) || isReadOnly(cm) || cm.state.disableInput || cm.state.accessibleTextareaWaiting) return false;
     if (cm.state.pasteIncoming && cm.state.fakedLastChar) {
       input.value = input.value.substring(0, input.value.length - 1);
       cm.state.fakedLastChar = false;
@@ -1495,9 +1495,7 @@ window.CodeMirror = (function() {
       cm.display.input.value = content;
       if (cm.state.focused) selectInput(cm.display.input);
       if (ie && !ie_lt9) cm.display.inputHasSelection = content;
-    } else if (user && !cm.state.accessibleTextareaWait) {
-      // console.log("resetting", force);
-      // if (!force) {return;}
+    } else if (user && !cm.state.accessibleTextareaWaiting) {
       cm.display.prevInput = cm.display.input.value = "";
       if (ie && !ie_lt9) cm.display.inputHasSelection = null;
     }
@@ -1505,6 +1503,7 @@ window.CodeMirror = (function() {
   }
 
   function focusInput(cm) {
+    console.log("Focus input");
     if (cm.options.readOnly != "nocursor" && (!mobile || document.activeElement != cm.display.input))
       cm.display.input.focus();
   }
@@ -2091,9 +2090,10 @@ window.CodeMirror = (function() {
     // First give onKeyEvent option a chance to handle this.
     var handled = handleKeyBinding(cm, e);
 
-    if (!handled && cm.state.accessibleTextareaWait) {
-      cm.state.accessibleTextareaWait = false;
-      clearTimeout(cm.state.accessiblityTimeout);
+    // On text input if value was temporaritly set for a screenreader, clear it out.
+    if (!handled && cm.state.accessibleTextareaWaiting) {
+      cm.state.accessibleTextareaWaiting = false;
+      clearTimeout(cm.state.accessibleTextareaTimeout);
       resetInput(cm, true);
     }
 
@@ -2281,7 +2281,6 @@ window.CodeMirror = (function() {
   // change is a {from, to, text [, origin]} object
   function makeChange(doc, change, selUpdate, ignoreReadOnly) {
     if (doc.cm) {
-      console.log("HERE!!!");
       if (!doc.cm.curOp) return operation(doc.cm, makeChange)(doc, change, selUpdate, ignoreReadOnly);
       if (doc.cm.state.suppressEdits) return;
     }
@@ -2516,6 +2515,7 @@ window.CodeMirror = (function() {
       if (posEq(from, to)) {
         console.log("POS EQ");
 
+        /*
         var fromOffset = from.ch;
         var toOffset = to.ch;
         var lineNum = 0;
@@ -2527,9 +2527,11 @@ window.CodeMirror = (function() {
           lineNum++;
         });
         var selectedRange = doc.cm.getValue();
+*/
 
+       //var rangeLine = from.line;
 
-        /*
+       /*
        var rangeMinLine = Math.max(from.line - 3, 0);
        var rangeMaxLine = Math.min(to.line + 3, doc.cm.lineCount() );
        var fromOffset = from.ch;
@@ -2547,22 +2549,22 @@ window.CodeMirror = (function() {
          {line: rangeMinLine, ch: 0 },
          {line: rangeMaxLine, ch: 0 }
        );
-        */
 
+        doc.cm.state.accessibleTextareaWaiting = true;
         doc.cm.display.input.value = selectedRange;
         doc.cm.display.input.setSelectionRange(fromOffset, toOffset);
 
-        doc.cm.state.accessibleTextareaWait = true;
+        */
 
-        clearTimeout(doc.cm.state.accessiblityTimeout);
-        doc.cm.state.accessiblityTimeout = setTimeout(function() {
-          //doc.cm.display.prevInput = prevInput;
-          //doc.cm.display.input.value = prevValue;
+        doc.cm.state.accessibleTextareaWaiting = true;
+        doc.cm.display.input.value = doc.getLine(from.line);
+        doc.cm.display.input.setSelectionRange(from.ch, from.ch);
 
-          //doc.cm.display._waiting = false;
-          doc.cm.state.accessibleTextareaWait = false;
+        clearTimeout(doc.cm.state.accessibleTextareaTimeout);
+        doc.cm.state.accessibleTextareaTimeout = setTimeout(function() {
+          doc.cm.state.accessibleTextareaWaiting = false;
           resetInput(doc.cm, true);
-        }, 1000);
+        }, 80);
 
       }
     }
@@ -2581,7 +2583,6 @@ window.CodeMirror = (function() {
   // updateDoc, since they have to be expressed in the line
   // numbers before the update.
   function setSelection(doc, anchor, head, bias, checkAtomic) {
-    console.log("setting selection");
     if (!checkAtomic && hasHandler(doc, "beforeSelectionChange") || doc.cm && hasHandler(doc.cm, "beforeSelectionChange")) {
       var filtered = filterSelectionChange(doc, anchor, head);
       head = filtered.head;
@@ -4570,7 +4571,6 @@ window.CodeMirror = (function() {
   // DOCUMENT DATA STRUCTURE
 
   function updateDoc(doc, change, markedSpans, selAfter, estimateHeight) {
-    console.log("UPDATE DOC");
     function spansFor(n) {return markedSpans ? markedSpans[n] : null;}
     function update(line, text, spans) {
       updateLine(line, text, spans, estimateHeight);

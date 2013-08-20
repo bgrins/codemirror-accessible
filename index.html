@@ -35,7 +35,7 @@
   <li>Text based input <b class="yes">works</b>, as the input is being added directly into the hidden textarea</li>
   <li>Selection works <b class="kindof">some of the time</b>, as it populates the textarea with the current selection.  It fails when the selection is over 100 lines or 1000 characters.  In this case it replaces the character with a '-'</li>
   <li>Cursor movement <b class="no">does not</b> work.  This is because the textarea is usually left empty, cleared out on regular intervals</li>
-  <li>Entering / exiting the editor is a little tricky.  I'm unable to start editing sometimes, and have to resort to clicking into the editor, which is not acceptable.  Likewise, once I am in the editor, it is hard to leave (tab's behavior is overridden).  Maybe someone with more experience with screen readers could comment on how to deal with this.  Send me a message at bgrinstead@mozilla.com if you have any ideas.</li>
+  <li>Entering / exiting the editor <b class="no">is buggy</b>.  It requires mouse usage to start editing (though you can enter and scan the text without it).  Additionally, the tab button's behavior is overriden as you would expect with a code editor, which makes it hard to leave the field.  Maybe someone with more experience with screen readers could comment on how to deal with this.  Send me a message at bgrinstead@mozilla.com or <a href="https://twitter.com/bgrins">@bgrins</a> if you have any ideas.</li>
 </ul>
 
 <h2>Possible Solution</h2>
@@ -46,7 +46,7 @@
   The downside is that this could potentially cause a performance bottleneck.  The selection was intentionally clipped with a low limit, and even more impact is probably caused by the computation of the selectionRange.  Textareas <a href="https://developer.mozilla.org/en-US/docs/Web/API/Input.setSelectionRange">setSelectionRange</a> method takes an absolute start and end value, while CodeMirror operates on individual lines.  So we need to count from 0 to currently selected line and add the length of each line to arrive there.  Perhaps this could be enabled only optionally from the CodeMirror instance.
 </p>
 <p>
-  This is working in the demo below.  Compare the first CodeMirror (with the fix applied) to the second CodeMirror (using the original version).  Send me an email at bgrinstead@mozilla.com if you have any suggestions or would like to talk further about this.
+  This is working in the demo below.  Compare the first CodeMirror (with the fix applied) to the second CodeMirror (using the original version).
 </p>
 
 <div class="right">
