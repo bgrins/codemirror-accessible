@@ -1443,7 +1443,7 @@ window.CodeMirror = (function() {
   // supported or compatible enough yet to rely on.)
   function readInput(cm) {
     var input = cm.display.input, prevInput = cm.display.prevInput, doc = cm.doc, sel = doc.sel;
-    if (!cm.state.focused || hasSelection(input) || isReadOnly(cm) || cm.state.disableInput) return false;
+    if (!cm.state.focused || hasSelection(input) || isReadOnly(cm) || cm.state.disableInput || cm.state.accessibleTextareaWaiting) return false;
     var text = input.value;
     if (text == prevInput && posEq(sel.from, sel.to)) return false;
     if (ie && !ie_lt9 && cm.display.inputHasSelection === text) {
@@ -1486,7 +1486,7 @@ window.CodeMirror = (function() {
       cm.display.input.value = content;
       if (cm.state.focused) selectInput(cm.display.input);
       if (ie && !ie_lt9) cm.display.inputHasSelection = content;
-    } else if (user) {
+    } else if (user && !cm.state.accessibleTextareaWaiting) {
       cm.display.prevInput = cm.display.input.value = "";
       if (ie && !ie_lt9) cm.display.inputHasSelection = null;
     }
@@ -2069,6 +2069,12 @@ window.CodeMirror = (function() {
     cm.doc.sel.shift = code == 16 || e.shiftKey;
     // First give onKeyEvent option a chance to handle this.
     var handled = handleKeyBinding(cm, e);
+
+    // On text input if value was temporaritly set for a screenreader, clear it out.
+    if (!handled && cm.state.accessibleTextareaWaiting) {
+      clearAccessibleTextarea(cm);
+    }
+
     if (opera) {
       lastStoppedKey = handled ? code : null;
       // Opera has no cut event... we try to at least catch the key combo
@@ -2473,6 +2479,29 @@ window.CodeMirror = (function() {
       setSelection(doc, pos, other || pos, bias);
     }
     if (doc.cm) doc.cm.curOp.userSelChange = true;
+
+    if (doc.cm) {
+      var from = doc.sel.from;
+      var to = doc.sel.to;
+
+      if (posEq(from, to) && doc.cm.display.input.setSelectionRange) {
+        clearAccessibleTextarea(doc.cm);
+
+        doc.cm.state.accessibleTextareaWaiting = true;
+        doc.cm.display.input.value = doc.getLine(from.line);
+        doc.cm.display.input.setSelectionRange(from.ch, from.ch);
+
+        doc.cm.state.accessibleTextareaTimeout = setTimeout(function() {
+          clearAccessibleTextarea(doc.cm);
+        }, 80);
+      }
+    }
+  }
+
+  function clearAccessibleTextarea(cm) {
+    clearTimeout(cm.state.accessibleTextareaTimeout);
+    cm.state.accessibleTextareaWaiting = false;
+    resetInput(cm, true);
   }
 
   function filterSelectionChange(doc, anchor, head) {
