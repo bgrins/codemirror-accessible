@@ -1,3 +1,5 @@
+// CodeMirror version 3.15
+//
 // CodeMirror is the only global var we claim
 window.CodeMirrorOriginal = (function() {
   "use strict";
@@ -332,19 +334,13 @@ window.CodeMirrorOriginal = (function() {
       d.scrollbarV.style.bottom = needsH ? scrollbarWidth(d.measure) + "px" : "0";
       d.scrollbarV.firstChild.style.height =
         (scrollHeight - d.scroller.clientHeight + d.scrollbarV.clientHeight) + "px";
-    } else {
-      d.scrollbarV.style.display = "";
-      d.scrollbarV.firstChild.style.height = "0";
-    }
+    } else d.scrollbarV.style.display = "";
     if (needsH) {
       d.scrollbarH.style.display = "block";
       d.scrollbarH.style.right = needsV ? scrollbarWidth(d.measure) + "px" : "0";
       d.scrollbarH.firstChild.style.width =
         (d.scroller.scrollWidth - d.scroller.clientWidth + d.scrollbarH.clientWidth) + "px";
-    } else {
-      d.scrollbarH.style.display = "";
-      d.scrollbarH.firstChild.style.width = "0";
-    }
+    } else d.scrollbarH.style.display = "";
     if (needsH && needsV) {
       d.scrollbarFiller.style.display = "block";
       d.scrollbarFiller.style.height = d.scrollbarFiller.style.width = scrollbarWidth(d.measure) + "px";
@@ -461,7 +457,7 @@ window.CodeMirrorOriginal = (function() {
     var positionsChangedFrom = Infinity;
     if (cm.options.lineNumbers)
       for (var i = 0; i < changes.length; ++i)
-        if (changes[i].diff && changes[i].from < positionsChangedFrom) { positionsChangedFrom = changes[i].from; }
+        if (changes[i].diff) { positionsChangedFrom = changes[i].from; break; }
 
     var end = doc.first + doc.size;
     var from = Math.max(visible.from - cm.options.viewportMargin, doc.first);
@@ -930,8 +926,8 @@ window.CodeMirrorOriginal = (function() {
   // smallest indentation, which tends to need the least context to
   // parse correctly.
   function findStartLine(cm, n, precise) {
-    var minindent, minline, doc = cm.doc, maxScan = cm.doc.mode.innerMode ? 1000 : 100;
-    for (var search = n, lim = n - maxScan; search > lim; --search) {
+    var minindent, minline, doc = cm.doc;
+    for (var search = n, lim = n - 100; search > lim; --search) {
       if (search <= doc.first) return doc.first;
       var line = getLine(doc, search - 1);
       if (line.stateAfter && (!precise || search <= doc.frontier)) return search;
@@ -946,7 +942,7 @@ window.CodeMirrorOriginal = (function() {
 
   function getStateBefore(cm, n, precise) {
     var doc = cm.doc, display = cm.display;
-    if (!doc.mode.startState) return true;
+      if (!doc.mode.startState) return true;
     var pos = findStartLine(cm, n, precise), state = pos > doc.first && getLine(doc, pos-1).stateAfter;
     if (!state) state = startState(doc.mode);
     else state = copyState(doc.mode, state);
@@ -1096,7 +1092,6 @@ window.CodeMirrorOriginal = (function() {
       if (cur.measureRight) rect.right = getRect(cur.measureRight).left;
       if (cur.leftSide) rect.leftSide = measureRect(getRect(cur.leftSide));
     }
-    removeChildren(cm.display.measure);
     for (var i = 0, cur; i < data.length; ++i) if (cur = data[i]) {
       finishRect(cur);
       if (cur.leftSide) finishRect(cur.leftSide);
@@ -1449,10 +1444,6 @@ window.CodeMirrorOriginal = (function() {
   function readInput(cm) {
     var input = cm.display.input, prevInput = cm.display.prevInput, doc = cm.doc, sel = doc.sel;
     if (!cm.state.focused || hasSelection(input) || isReadOnly(cm) || cm.state.disableInput) return false;
-    if (cm.state.pasteIncoming && cm.state.fakedLastChar) {
-      input.value = input.value.substring(0, input.value.length - 1);
-      cm.state.fakedLastChar = false;
-    }
     var text = input.value;
     if (text == prevInput && posEq(sel.from, sel.to)) return false;
     if (ie && !ie_lt9 && cm.display.inputHasSelection === text) {
@@ -1605,16 +1596,6 @@ window.CodeMirrorOriginal = (function() {
       fastPoll(cm);
     });
     on(d.input, "paste", function() {
-      // Workaround for webkit bug https://bugs.webkit.org/show_bug.cgi?id=90206
-      // Add a char to the end of textarea before paste occur so that
-      // selection doesn't span to the end of textarea.
-      if (webkit && !cm.state.fakedLastChar) {
-        var start = d.input.selectionStart, end = d.input.selectionEnd;
-        d.input.value += "$";
-        d.input.selectionStart = start;
-        d.input.selectionEnd = end;
-        cm.state.fakedLastChar = true;
-      }
       cm.state.pasteIncoming = true;
       fastPoll(cm);
     });
@@ -2081,12 +2062,11 @@ window.CodeMirrorOriginal = (function() {
   function onKeyDown(e) {
     var cm = this;
     if (!cm.state.focused) onFocus(cm);
+    if (ie && e.keyCode == 27) { e.returnValue = false; }
     if (signalDOMEvent(cm, e) || cm.options.onKeyEvent && cm.options.onKeyEvent(cm, addStop(e))) return;
-    if (ie && e.keyCode == 27) e.returnValue = false;
     var code = e.keyCode;
     // IE does strange things with escape.
     cm.doc.sel.shift = code == 16 || e.shiftKey;
-
     // First give onKeyEvent option a chance to handle this.
     var handled = handleKeyBinding(cm, e);
     if (opera) {
@@ -2120,10 +2100,7 @@ window.CodeMirrorOriginal = (function() {
       cm.state.focused = true;
       if (cm.display.wrapper.className.search(/\bCodeMirror-focused\b/) == -1)
         cm.display.wrapper.className += " CodeMirror-focused";
-      if (!cm.curOp) {
-        resetInput(cm, true);
-        if (webkit) setTimeout(bind(resetInput, cm, true), 0); // Issue #1730
-      }
+      resetInput(cm, true);
     }
     slowPoll(cm);
     restartBlink(cm);
@@ -3754,10 +3731,9 @@ window.CodeMirrorOriginal = (function() {
   TextMarker.prototype.changed = function() {
     var pos = this.find(), cm = this.doc.cm;
     if (!pos || !cm) return;
-    if (this.type != "bookmark") pos = pos.from;
-    var line = getLine(this.doc, pos.line);
+    var line = getLine(this.doc, pos.from.line);
     clearCachedMeasurement(cm, line);
-    if (pos.line >= cm.display.showingFrom && pos.line < cm.display.showingTo) {
+    if (pos.from.line >= cm.display.showingFrom && pos.from.line < cm.display.showingTo) {
       for (var node = cm.display.lineDiv.firstChild; node; node = node.nextSibling) if (node.lineObj == line) {
         if (node.offsetHeight != line.height) updateLineHeight(line, node.offsetHeight);
         break;
@@ -4420,13 +4396,11 @@ window.CodeMirrorOriginal = (function() {
         if (size) {
           builder.measure[builder.pos] = widget;
         } else {
-          var elt = zeroWidthElement(builder.cm.display.measure);
-          if (marker.type == "bookmark" && !marker.insertLeft)
-            builder.measure[builder.pos] = builder.pre.appendChild(elt);
-          else if (builder.measure[builder.pos])
-            return;
+          var elt = builder.measure[builder.pos] = zeroWidthElement(builder.cm.display.measure);
+          if (marker.type != "bookmark" || marker.insertLeft)
+            builder.pre.insertBefore(elt, widget);
           else
-            builder.measure[builder.pos] = builder.pre.insertBefore(elt, widget);
+            builder.pre.appendChild(elt);
         }
         builder.measuredSomething = true;
       }
@@ -4450,7 +4424,7 @@ window.CodeMirrorOriginal = (function() {
       if (nextChange == pos) { // Update current marker set
         spanStyle = spanEndStyle = spanStartStyle = title = "";
         collapsed = null; nextChange = Infinity;
-        var foundBookmarks = [];
+        var foundBookmark = null;
         for (var j = 0; j < spans.length; ++j) {
           var sp = spans[j], m = sp.marker;
           if (sp.from <= pos && (sp.to == null || sp.to > pos)) {
@@ -4464,15 +4438,14 @@ window.CodeMirrorOriginal = (function() {
           } else if (sp.from > pos && nextChange > sp.from) {
             nextChange = sp.from;
           }
-          if (m.type == "bookmark" && sp.from == pos && m.replacedWith) foundBookmarks.push(m);
+          if (m.type == "bookmark" && sp.from == pos && m.replacedWith) foundBookmark = m;
         }
         if (collapsed && (collapsed.from || 0) == pos) {
           buildCollapsedSpan(builder, (collapsed.to == null ? len : collapsed.to) - pos,
                              collapsed.marker, collapsed.from == null);
           if (collapsed.to == null) return collapsed.marker.find();
         }
-        if (!collapsed && foundBookmarks.length) for (var j = 0; j < foundBookmarks.length; ++j)
-          buildCollapsedSpan(builder, 0, foundBookmarks[j]);
+        if (foundBookmark && !collapsed) buildCollapsedSpan(builder, 0, foundBookmark);
       }
       if (pos >= len) break;
 
@@ -5820,7 +5793,7 @@ window.CodeMirrorOriginal = (function() {
 
   // THE END
 
-  CodeMirror.version = "3.15.1";
+  CodeMirror.version = "3.15.0";
 
   return CodeMirror;
 })();
