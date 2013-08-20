@@ -12,21 +12,30 @@
 
   <style type="text/css">
     html, body { margin: 0; padding: 0; }
-    body { padding: 10px; padding-bottom: 40px; }
+    body { padding: 10px 30px; padding-bottom: 40px; font-size: 1.1em; }
     h4 { margin: 30px 0; }
     .CodeMirror { height: 500px; width: 90%; margin: 0 auto; border: solid 1px #ccc; }
     .right {text-align: right;}
     .yes { color: #33aa33;}
     .no { color: #aa3333;}
-    .kindof { color: orange;}
-    code { color: #660000; }
+    .kindof { color: #880; }
+    code { color: #3333aa; outline: solid 1px rgba(0, 0, 0, .1); }
     #textarea-editor { width: 90%; margin-left: 5%; height: 500px;}
+    #links { float: right; }
+    .clear { clear: both ;}
+    h1 { float: left; margin: 0; padding: 0; padding-bottom: 10px; }
+    h1 a {text-decoration: none; color: #119;}
+    h1 a:hover {text-decoration: underline;}
   </style>
 
 </head>
 <body>
 
-<h1>CodeMirror Accessibility</h1>
+<h1><a href="https://github.com/bgrins/codemirror-accessible">CodeMirror Accessibility</a></h1>
+<div id="links">
+ <small><a href="http://bgrins.github.io/codemirror-accessible">source code: http://bgrins.github.io/codemirror-accessible</a></small>
+</div>
+<hr class="clear" />
 <p>
   CodeMirror does not currently fully support screen reader software.  Since CodeMirror <a href="http://codemirror.net/doc/internals.html">does not use contentEditable</a> internally, an extra effort must be made to provide this accessibility.
 </p>
@@ -40,13 +49,13 @@
 </p>
 <ul>
   <li>Text based input <b class="yes">works</b>, as the input is being added directly into the hidden textarea</li>
-  <li>Selection works <b class="kindof">some of the time</b>, as it populates the textarea with the current selection.  It fails when the selection is over 100 lines or 1000 characters.  In this case it replaces the character with a '-'</li>
-  <li>Cursor movement <b class="no">does not</b> work.  This is because the textarea is usually left empty, cleared out on regular intervals</li>
+  <li>Selection <b class="kindof">works some of the time</b>, as it populates the textarea with the current selection.  It fails when the selection is over 100 lines or 1000 characters.  In this case it replaces the character with a '-'</li>
+  <li>Cursor movement <b class="no">does not work</b>.  This is because the textarea is usually left empty, cleared out on regular intervals</li>
   <li>
-    Entering / exiting the editor <b class="no">is buggy</b>.  It requires mouse usage to start editing (though you can enter and scan the text without it).  Compare the following behavior with the normal textarea at the bottom of the page.
+    Entering / exiting the editor <b class="no">does not work</b>.  It requires mouse usage to start editing (though you can enter and scan the text without it).  Compare the following behavior with the normal textarea at the bottom of the page.
     <ul>
       <li>
-  Additionally, the tab button's behavior is overriden as you would expect with a code editor, which makes it hard to leave the field.
+  The tab button's behavior is overriden as you would expect with a code editor, which makes it hard to leave the field.  Perhaps a key like <code>escape</code> could be used to blur the editor?
       </li>
       <li>
   Pressing <code>up</code> or <code>down</code> on the first or last line of the editor, repectively does not allow NVDA to move onto the next element in the page.
@@ -85,11 +94,11 @@
 
 <h2>Demos</h2>
 <p>
-  This is working in the demo below.  Compare the first CodeMirror (with the fix applied) to the second CodeMirror (using the original version).
+  This is working in the demo below.  Compare the first CodeMirror (with the fix applied), the second CodeMirror (using the original version), and a normal textarea (at the bottom).
 </p>
 
-<div class="right">
-<button id="toggle-textarea-visibility">Toggle CodeMirror Internal Textarea Visibility</button> <small>makes it easier to debug</small>
+<div>
+<button id="toggle-textarea-visibility">Toggle CodeMirror Internal Textarea Visibility</button> <small>makes it easier to debug and see what is going on</small>
 </div>
 
 <hr />
