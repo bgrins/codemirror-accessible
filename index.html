@@ -26,6 +26,7 @@
     h1 { float: left; margin: 0; padding: 0; padding-bottom: 10px; }
     h1 a {text-decoration: none; color: #119;}
     h1 a:hover {text-decoration: underline;}
+    blockquote { border-left: solid 2px #339; margin-left: 10px; padding-left: 10px;}
   </style>
 
 </head>
@@ -53,12 +54,20 @@
   <li>Cursor movement <b class="no">does not work</b>.  This is because the textarea is usually left empty, cleared out on regular intervals</li>
   <li>
     Entering / exiting the editor <b class="no">does not work</b>.  Although you can generally tab into the editor without a mouse, leaving the editor is tricky and I've had to resort to mouse usage to do this.  Compare the following behavior with the normal textarea at the bottom of the page.
-    <ul>
-      <li>
+
   The <code>tab</code> button's behavior is overriden as you would expect with a code editor, which makes it hard to leave the field.  Perhaps a key like <code>escape</code> could be used to blur the editor?
-      </li>
-    </ul>
-    Please comment with suggestions on how to deal with this.  Send me a message at bgrinstead@mozilla.com or <a href="https://twitter.com/bgrins">@bgrins</a> if you have any ideas.</li>
+
+  Here are some recommendataions from WAI-ARIA 1.0 Authoring Practices - <a href="http://www.w3.org/WAI/PF/aria-practices/#richtext">Expected keyboard interaction with a rich text editor</a>:
+
+  <blockquote>
+Optionally, if the developer wishes to provide the ability to insert a tab into the document, it is recommended one of the following methods be used.
+
+Provide indent and outdent buttons in the menu. Keyboard shortcuts to the buttons should be Control+M for indent and Control+Shift+M for outdent.
+Provide a button in the menu to toggle the use of Tab between the two modes. If this button is used, then Control+M is recommended as a keyboard shortcut to toggle the button.
+  </blockquote>
+
+    Please comment with suggestions on how to deal with this.  Send me a message at bgrinstead@mozilla.com or <a href="https://twitter.com/bgrins">@bgrins</a> if you have any ideas.
+  </li>
 </ul>
 
 <h2>Possible Solution</h2>
