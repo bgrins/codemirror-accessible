@@ -22,7 +22,6 @@ function load() {
     var myContentEditable = document.getElementById("content-editable");
     var button = document.getElementById("toggle-textarea-visibility");
 
-    button.onclick = toggleTextareaDisplay;
 
     var editor = window.editor = CodeMirror.fromTextArea(myTextArea, {
             lineNumbers: true,
@@ -37,6 +36,7 @@ function load() {
             continueComments: "Enter",
             extraKeys: {"Ctrl-Q": "toggleComment"}
     });
+
 
     var textareaVisible = false;
     function toggleTextareaDisplay() {
@@ -60,6 +60,21 @@ function load() {
         }
 
         textareaVisible = !textareaVisible;
+
+        if (window.localStorage) {
+            if (textareaVisible) {
+                window.localStorage["toggleTextareaDisplay"] = "1";
+            }
+            else {
+                window.localStorage.removeKey("toggleTextareaDisplay");
+            }
+        }
+    }
+
+    button.onclick = toggleTextareaDisplay;
+
+    if (window.localStorage && window.localStorage["toggleTextareaDisplay"]) {
+        toggleTextareaDisplay();
     }
 
 }
