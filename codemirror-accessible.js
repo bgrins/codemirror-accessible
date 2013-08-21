@@ -2485,9 +2485,9 @@ window.CodeMirror = (function() {
       var to = doc.sel.to;
 
       if (posEq(from, to) && doc.cm.display.input.setSelectionRange) {
-        clearAccessibleTextarea(doc.cm);
-
+        clearTimeout(doc.cm.state.accessibleTextareaTimeout);
         doc.cm.state.accessibleTextareaWaiting = true;
+
         doc.cm.display.input.value = doc.getLine(from.line) + "\n";
         doc.cm.display.input.setSelectionRange(from.ch, from.ch);
 
